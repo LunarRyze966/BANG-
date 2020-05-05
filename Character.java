@@ -88,18 +88,18 @@ class GregDigger extends Character{
     }
     
 }
-class JoseDelgado extends Character{
-    public JoseDelgado(){
-        HP = 1;
-        name = "Jose Delgado";
-        abilityDescript = "You may use the Loudmouth die without replacing a base die (roll six dice total).<i>If you use the Loudmouth die, you roll 6 dice total; if you use the Coward die, 5. You cannot use the Loudmouth and the Coward dice together.</i>";
+class ApacheKid extends Character{
+    public ApacheKid(){
+        HP = 9;
+        name = "Apache Kid";
+        abilityDescript = "If you roll an arrow, you may take the indian Chief's arrow from another player.";
     }
 }
-class TequilaJoe extends Character{
-    public TequilaJoe(){
-        HP = 1;
-        name = "Tequila Joe";
-        abilityDescript = "You may use the Coward die without replacing a base die (roll six dice total).<i>If you use the Coward die, you roll 6 dice total; if you use the Loudmouth die, 5. You cannot use the Loudmouth and the Coward dice together.</i>";
+class BillNoface extends Character{
+    public BillNoface(){
+        HP = 9;
+        name = "Bill Noface";
+        abilityDescript = "Apply arrow results only after your last roll. <i>Your last roll isn’t necessarily the third one, you may stop earlier, as normal.</i>";
     }
 }
 
