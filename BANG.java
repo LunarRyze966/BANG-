@@ -27,7 +27,7 @@ public class BANG {
         
         int i;
         
-        Random random = new Random();
+        
         
         
         //ArrayList<Character> characters = new ArrayList<Character>();
@@ -101,9 +101,11 @@ public class BANG {
         System.out.println("You are playing as: " + pc.character().name());
         
         displayPlayers();
-        rollAll();
-        printDiceValues();
-        interpretFinalRoll(activePlayer());
+        beginTurn(activePlayer());
+        beginTurn(activePlayer());
+        //rollAll(activePlayer());
+        //printDiceValues();
+        //interpretFinalRoll(activePlayer());
       
         
         /*
@@ -132,7 +134,7 @@ public class BANG {
         {
             replaceDieDecide();
         }
-        rollAll();
+        rollAll(player);
     }
     public static void replaceDieDecide()
     {   
@@ -174,7 +176,7 @@ public class BANG {
        duelCheck(player);
     }
     //rolls all the dice
-    public static void rollAll()
+    public static void rollAll(Player player)
     {
         //if undead expansion enabled roll the duel dice, if the OTS expansion is disabled, then specialDieEnabled will always = 0.
         if(UoAEnabled == true)
@@ -241,6 +243,12 @@ public class BANG {
                     dice[i].setFaceValue(dice[i].basicRoll());
                 }
             }
+        }
+        printDiceValues();
+        interpretRoll(player);
+        if(player != pc)
+        {
+            endTurn(player);
         }
     }
     //prints the dice values for debugging
@@ -455,6 +463,10 @@ public class BANG {
                         drinkMenu(1);
                     }
                 }
+                else
+                {
+                    botDrink(player);
+                }
             }
             //remove a drink wound if the player had a drink wound and rolled a drink
             else if(die.FaceValue() == "Beer")
@@ -476,6 +488,10 @@ public class BANG {
                 {
                     shootMenu(1);
                 }
+                else
+                {
+                    botShoot(player,1);
+                }
             }
             else if(die.FaceValue() == "Bull's Eye 2")
             {
@@ -483,6 +499,10 @@ public class BANG {
                 if(player == pc)
                 {
                     shootMenu(2);
+                }
+                else
+                {
+                    botShoot(player,2);
                 }
             }
         }
@@ -634,6 +654,14 @@ public class BANG {
             return availableTargetRight(previousPlayer(player), 1);
         }
     }
+    public static ArrayList<Player> allAvailableTargets(Player player, int distance)
+    {
+        ArrayList<Player> availableTargets = new ArrayList<Player>();
+        availableTargets.add(availableTargetLeft(player, distance));
+        availableTargets.add(availableTargetRight(player, distance));
+        return availableTargets;
+        
+    }
     //checks to see if a player has won the game
     public static void checkWinConditions()
     {
@@ -672,13 +700,16 @@ public class BANG {
     }
     public static Player getSheriff()
     {
+        Player sheriff = null;
         for(Player player: players)
         {
             if(player.role() == "Sheriff")
             {
-                return player;
+                sheriff = player;
             }
         }
+        return sheriff;
+
     }
     public static ArrayList<Player> getLivingPlayers()
     {
@@ -692,6 +723,19 @@ public class BANG {
             }
         }
         return livingPlayers;
+    }
+    public static ArrayList<Player> getDeadPlayers()
+    {
+        ArrayList<Player> deadPlayers = new ArrayList<Player>();
+        //if a player is alive add them to the living player array
+        for(Player player: players)
+        {
+            if(player.isDead())
+            {
+                deadPlayers.add(player);
+            }
+        }
+        return deadPlayers;
     }
     public static ArrayList<Player> getLawPlayers()
     {
@@ -727,5 +771,32 @@ public class BANG {
     }
     public static void outlawWin()
     {
+    }
+    public static void bot(Player bot)
+    {
+        if(bot == pc)
+        {
+            return;
+        }
+    }
+    public static  void botShoot(Player bot, int distance)
+    {
+        Random random = new Random();
+        ArrayList<Player> targets = new ArrayList<Player>();
+        targets = allAvailableTargets(bot,distance);
+        int rand = (Math.abs((random.nextInt())%targets.size()));          
+        damageTarget(targets.get(rand),1);
+        System.out.println("Player " + players.indexOf(bot) + " shoots " + targets.get(rand).character().name());
+    }
+    public static void botDrink(Player bot)
+    {
+        if(bot.role() == "Deputy")
+        {
+            healTarget(getSheriff(), 1);
+        }
+        else
+        {
+            healTarget(bot,1);
+        }
     }
 }
