@@ -21,6 +21,7 @@ public class BANG {
     static boolean OTSEnabled = false; //determines if the Old Time Saloon expansion is enabled or not
     static int specialDieEnabled = 0; //0 = no special die // 1 = loudMouth enabled // 2 = cowardEnabled
     static int playerDied = 0; //an int that keeps track of how many players died each turn >0 means someone died
+    static boolean gameOver = false;
     
     
     public static void main(String[] args) {
@@ -101,8 +102,11 @@ public class BANG {
         System.out.println("You are playing as: " + pc.character().name());
         
         displayPlayers();
-        beginTurn(activePlayer());
-        beginTurn(activePlayer());
+        while(getLivingPlayers().size() == players.size())
+        {
+            beginTurn(activePlayer());
+        }
+        System.out.println("END");
         //rollAll(activePlayer());
         //printDiceValues();
         //interpretFinalRoll(activePlayer());
@@ -133,6 +137,10 @@ public class BANG {
         if(OTSEnabled == true)
         {
             replaceDieDecide();
+        }
+        if(player.isDead())
+        {
+            advanceTurn();
         }
         rollAll(player);
     }
@@ -246,7 +254,7 @@ public class BANG {
         }
         printDiceValues();
         interpretRoll(player);
-        if(player != pc)
+        if(isBot(player))
         {
             endTurn(player);
         }
@@ -416,8 +424,12 @@ public class BANG {
     {
         interpretFinalRoll(player);
         specialDieEnabled = 0;
-        turn = (turn +1)%players.size();
+        advanceTurn();
         
+    }
+    public static void advanceTurn()
+    {
+        turn = (turn +1)%players.size();
     }
     //checks the amount of whiskey bottles rolled by a player
     public static void whiskeyCheck(Player player)
@@ -603,6 +615,10 @@ public class BANG {
         {
            player.heal(heal*2);
         }
+        if(player.isDead())
+        {
+            return;
+        }
         player.heal(heal);
     }
     //deals 'damage' amount of damage to a player
@@ -624,26 +640,64 @@ public class BANG {
                 player.heal(2);
             }
         }
+        System.out.println(deceased.character().name() + " has died");
         //win conditions need only be checked when a player dies
         checkWinConditions();
     }
     //finds an available target to the right of a player, distance determines whether the search starts 1 or more to the right.
     public static Player availableTargetRight(Player player, int distance)
     {
-        int index = players.indexOf(player);
-        //if the player is alive, then he is a valid target
-        if(players.get((index + distance)%players.size()).isAlive())
+        int index = (players.indexOf(player) + distance) % players.size();
+        boolean targetFound = false;
+        Player target = null;
+        while(targetFound == false)
         {
-            return players.get((index+distance)%players.size());
+            if(players.get(index).isAlive() && players.get(index) != player)
+            {
+                target = players.get(index);
+                targetFound = true;
+            }
+            else
+            {
+                index += (index+1)%players.size();
+            }
+        }
+        
+        return target;
+        
+        /*
+        //if the player is alive, then he is a valid target
+        if(players.get(Math.floorMod(index + distance,players.size())).isAlive())
+        {
+            return players.get(Math.floorMod(index + distance,players.size()));
         }
         //if he is dead then check the player to his right
         else
         {
             return availableTargetRight(nextPlayer(player), 1);
         }
+        */
     }
     public static Player availableTargetLeft(Player player, int distance)
     {
+        int index = Math.floorMod(players.indexOf(player) - distance, players.size());
+        boolean targetFound = false;
+        Player target = null;
+        while(targetFound == false)
+        {
+            if(players.get(index).isAlive() && players.get(index) != player)
+            {
+                target = players.get(index);
+                targetFound = true;
+            }
+            else
+            {
+                index = Math.floorMod(index - 1,players.size());
+            }
+        }
+        
+        return target;
+        /*
         int index = players.indexOf(player);
         if(players.get(Math.floorMod(index - distance,players.size())).isAlive())
         {
@@ -653,6 +707,7 @@ public class BANG {
         {
             return availableTargetRight(previousPlayer(player), 1);
         }
+        */
     }
     public static ArrayList<Player> allAvailableTargets(Player player, int distance)
     {
@@ -677,7 +732,7 @@ public class BANG {
         {
             if(getLivingPlayers().size() == 1)
             {
-                if(getLivingPlayers().get(0).role() == "Renegade")
+                if(getLivingPlayers().get(0).role() == "renegade")
                 {
                     renegadeWin();
                 }
@@ -691,7 +746,7 @@ public class BANG {
     //returns the player to the right of a player
     public static Player nextPlayer(Player player)
     {
-       return players.get((players.indexOf(player)+1)%players.size());
+        return players.get(Math.floorMod((players.indexOf(player))+1,players.size()));
     }
     //returns the player to the left of a player
     public static Player previousPlayer(Player player)
@@ -703,7 +758,7 @@ public class BANG {
         Player sheriff = null;
         for(Player player: players)
         {
-            if(player.role() == "Sheriff")
+            if(player.role() == "sheriff")
             {
                 sheriff = player;
             }
@@ -743,7 +798,7 @@ public class BANG {
         //if a player is alive add them to the living player array
         for(Player player: players)
         {
-            if(player.isAlive() && (player.role() == "Sheriff" || player.role() == "Deputy"))
+            if(player.isAlive() && (player.role() == "sheriff" || player.role() == "deputy"))
             {
                 lawPlayers.add(player);
             }
@@ -756,7 +811,7 @@ public class BANG {
         //if a player is alive add them to the living player array
         for(Player player: players)
         {
-            if(player.isAlive() && player.role() == "Outlaw")
+            if(player.isAlive() && player.role() == "outlaw")
             {
                 outlawPlayers.add(player);
             }
@@ -765,38 +820,67 @@ public class BANG {
     }
     public static void lawWin()
     {
+        System.out.println("law Wins");
     }
     public static void renegadeWin()
     {
+        System.out.println("renegade Wins");
     }
     public static void outlawWin()
     {
+        System.out.println("outlaw Wins");
     }
-    public static void bot(Player bot)
+    public static boolean isBot(Player player)
     {
-        if(bot == pc)
+        if(player == pc)
         {
-            return;
+            return false;
+        }
+        else
+        {
+            return true;
         }
     }
     public static  void botShoot(Player bot, int distance)
     {
+        
         Random random = new Random();
+        Player targetPlayer = bot;
         ArrayList<Player> targets = new ArrayList<Player>();
         targets = allAvailableTargets(bot,distance);
-        int rand = (Math.abs((random.nextInt())%targets.size()));          
-        damageTarget(targets.get(rand),1);
-        System.out.println("Player " + players.indexOf(bot) + " shoots " + targets.get(rand).character().name());
+        
+        
+        int rand = (Math.abs((random.nextInt())%targets.size())); 
+        targetPlayer = targets.get(rand);
+        damageTarget(targetPlayer,1);
+        System.out.println(bot.character().name() + " shoots " + targetPlayer.character().name());
+        
+        
+        /*
+        int leastHP = 99;
+        
+        for(Player player : targets)
+        {
+            if(player.currentHP() < leastHP)
+            {
+                targetPlayer = player;
+            }
+        }
+        damageTarget(targetPlayer,1);
+        System.out.println(bot.character().name() + " shoots " + targetPlayer.character().name());
+        */
     }
     public static void botDrink(Player bot)
     {
-        if(bot.role() == "Deputy")
+        if(bot.role() == "deputy")
         {
             healTarget(getSheriff(), 1);
+            System.out.println(bot.character().name() + " heals " + getSheriff().character().name());
         }
         else
         {
             healTarget(bot,1);
+            System.out.println(bot.character().name() + " heals him or herself");
         }
     }
 }
