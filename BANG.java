@@ -28,9 +28,6 @@ public class BANG {
         
         int i;
         
-        
-        
-        
         //ArrayList<Character> characters = new ArrayList<Character>();
         
         //Instantiates a list of possible characters
@@ -102,10 +99,10 @@ public class BANG {
         System.out.println("You are playing as: " + pc.character().name());
         
         displayPlayers();
-        while(getLivingPlayers().size() == players.size())
-        {
+        //while(gameOver != true)
+        //{
             beginTurn(activePlayer());
-        }
+       //}
         System.out.println("END");
         //rollAll(activePlayer());
         //printDiceValues();
@@ -426,10 +423,12 @@ public class BANG {
         specialDieEnabled = 0;
         advanceTurn();
         
+        
     }
     public static void advanceTurn()
     {
         turn = (turn +1)%players.size();
+        beginTurn(activePlayer());;
     }
     //checks the amount of whiskey bottles rolled by a player
     public static void whiskeyCheck(Player player)
@@ -659,7 +658,7 @@ public class BANG {
             }
             else
             {
-                index += (index+1)%players.size();
+                index = (index+1)%players.size();
             }
         }
         
@@ -820,14 +819,17 @@ public class BANG {
     }
     public static void lawWin()
     {
+        gameOver = true;
         System.out.println("law Wins");
     }
     public static void renegadeWin()
     {
+        gameOver = true;
         System.out.println("renegade Wins");
     }
     public static void outlawWin()
     {
+        gameOver = true;
         System.out.println("outlaw Wins");
     }
     public static boolean isBot(Player player)
@@ -840,6 +842,11 @@ public class BANG {
         {
             return true;
         }
+    }
+    public static void botTurn(Player bot)
+    {
+        rollAll(bot);
+        endTurn(bot);
     }
     public static  void botShoot(Player bot, int distance)
     {
