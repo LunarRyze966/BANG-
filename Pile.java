@@ -13,7 +13,9 @@ import java.util.*;
 public class Pile {
     private int arrows;
     private int chiefArrow;
-    public static ArrayList<DuelWound> duelWounds = new ArrayList<DuelWound>();
+    private static ArrayList<DuelWound> duelWounds = new ArrayList<DuelWound>();
+    private static ArrayList<BoneyardCard> boneyardCards = new ArrayList<BoneyardCard>();
+    private int totalHands;
     
     
     public Pile()
@@ -22,22 +24,36 @@ public class Pile {
         chiefArrow = 1;
         
         
-        duelWounds.add(new DuelWound("Drink"));
-        duelWounds.add(new DuelWound("Drink"));
-        duelWounds.add(new DuelWound("Drink"));
-        duelWounds.add(new DuelWound("ShootFirst"));
-        duelWounds.add(new DuelWound("ShootFirst"));
-        duelWounds.add(new DuelWound("ShootFirst"));
-        duelWounds.add(new DuelWound("ShootFirst"));
-        duelWounds.add(new DuelWound("ShootFirst"));
-        duelWounds.add(new DuelWound("ShootSecond"));
-        duelWounds.add(new DuelWound("ShootSecond"));
-        duelWounds.add(new DuelWound("ShootSecond"));
-        duelWounds.add(new DuelWound("ShootSecond"));
-        duelWounds.add(new DuelWound("ShootSecond"));
+        duelWounds.add(new DuelWound("Beer"));
+        duelWounds.add(new DuelWound("Beer"));
+        duelWounds.add(new DuelWound("Beer"));
+        duelWounds.add(new DuelWound("Bull's Eye 1"));
+        duelWounds.add(new DuelWound("Bull's Eye 1"));
+        duelWounds.add(new DuelWound("Bull's Eye 1"));
+        duelWounds.add(new DuelWound("Bull's Eye 1"));
+        duelWounds.add(new DuelWound("Bull's Eye 1"));
+        duelWounds.add(new DuelWound("Bull's Eye 2"));
+        duelWounds.add(new DuelWound("Bull's Eye 2"));
+        duelWounds.add(new DuelWound("Bull's Eye 2"));
+        duelWounds.add(new DuelWound("Bull's Eye 2"));
+        duelWounds.add(new DuelWound("Bull's Eye 2"));
         duelWounds.add(new DuelWound("Dynamite"));
         duelWounds.add(new DuelWound("Dynamite"));
         
+        
+        boneyardCards.add(new BoneyardCard(0));
+        boneyardCards.add(new BoneyardCard(0));
+        boneyardCards.add(new BoneyardCard(0));
+        boneyardCards.add(new BoneyardCard(0));
+        boneyardCards.add(new BoneyardCard(1));
+        boneyardCards.add(new BoneyardCard(1));
+        boneyardCards.add(new BoneyardCard(1));
+        boneyardCards.add(new BoneyardCard(1));
+        boneyardCards.add(new BoneyardCard(2));
+        boneyardCards.add(new BoneyardCard(2));
+        boneyardCards.add(new BoneyardCard(2));
+        
+        Collections.shuffle(boneyardCards);
         Collections.shuffle(duelWounds);
         
     }
@@ -58,6 +74,14 @@ public class Pile {
     {
         this.arrows -= arrows;
     }
+    public void returnArrow(int arrows)
+    {
+        this.arrows += arrows;
+    }
+    public void setArrows(int arrows)
+    {
+        this.arrows = arrows;
+    }
     public DuelWound drawDuelWound()
     {
         DuelWound temp = this.duelWounds.get(0);
@@ -67,5 +91,21 @@ public class Pile {
     public void returnDuelWound(DuelWound token)
     {
         this.duelWounds.add(token);
+    }
+    public BoneyardCard drawBoneyardCard()
+    {
+        BoneyardCard temp = this.boneyardCards.get(0);
+        this.totalHands += temp.hands();
+        //if it is a hand card it stays out
+        if(temp.hands() > 0)
+        {
+            this.boneyardCards.remove(0);
+        }
+        //otherwise it is shuffled back into the deck
+        else
+        {
+            Collections.shuffle(boneyardCards);
+        }
+        return temp;
     }
 }

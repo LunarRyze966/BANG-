@@ -5,10 +5,9 @@
  */
 package bang;
 
-/**
- *
- * @author ThatP
- */
+import java.util.*;
+
+
 public class Player {
     
     private Character character;
@@ -16,11 +15,20 @@ public class Player {
     private int maxHP;
     private String role;
     private int arrows;
-    private boolean isUser = false;
+    private ArrayList<DuelWound> duelWounds;
+    private boolean isZombie;
+    private boolean chiefArrow;
     
     public Player()
     {
-        
+        character = new BlackJack();
+        currentHP = 8;
+        maxHP = 8;
+        role = "Sheriff";
+        arrows = 0;
+        duelWounds = null;
+        isZombie = false;
+        chiefArrow = false;
     }
     public Player(String role)
     {
@@ -45,6 +53,14 @@ public class Player {
     {
         return this.arrows;
     }
+    public boolean hasChiefArrow()
+    {
+        if(this.chiefArrow == true)
+        {
+            return true;
+        }
+        else return false;
+    }
     public int currentHP()
     {
         return this.currentHP;
@@ -53,25 +69,34 @@ public class Player {
     {
         return this.maxHP;
     }
-    public boolean isUser()
+    public ArrayList<DuelWound> getDuelWounds()
     {
-        return this.isUser;
+        return this.duelWounds;
+    }
+    public void addDuelWound(DuelWound token)
+    {
+        this.duelWounds.add(token);
     }
     public void setCharacter(Character character)
     {
         this.character = character;
     }
+    public void setMaxHP(int maxHP)
+    {
+        this.maxHP = maxHP;
+    }
+    public void setCurrentHP(int hp)
+    {
+        this.currentHP = hp;
+    }
     public void setSheriff()
     {
         this.maxHP += 2;
+        this.currentHP = this.maxHP;
     }
     public void setRole(String role)
     {
         this.role = role;
-    }
-    public void setUser()
-    {
-        this.isUser = true;
     }
     public void setArrows(int arrows)
     {
@@ -102,7 +127,46 @@ public class Player {
             currentHP = 0;
         }
     }
-    
+    public void getChiefArrow()
+    {
+        this.chiefArrow = true;
+    }
+    public void removeChiefArrow()
+    {
+        this.chiefArrow = false;
+    }
+    public  DuelWound returnDuelWound()
+    {
+        DuelWound temp = this.duelWounds.get(0);
+        this.duelWounds.remove(0);
+        return temp;
+    }
+    public boolean isZombie()
+    {
+        return isZombie;
+    }
+    public void setZombie()
+    {
+        this.isZombie = true;
+        
+    }
+    public boolean isDead()
+    {
+        if(currentHP == 0)
+        {
+            return true;
+        }
+        else return false;
+    }
+  
+    public boolean isAlive()
+    {
+        if(currentHP > 0)
+        {
+            return true;
+        }
+        else return false;
+    }
     
 }
 
