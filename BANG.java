@@ -17,11 +17,16 @@ public class BANG {
     static Player currPlayer;
     static ArrayList<Character> characters = new ArrayList<Character>();
     static ArrayList<Player> players = new ArrayList<Player>();
+    static Die[] dice = {new Die(), new Die(), new Die(), new Die(), new Die()};
+    static boolean UoAEnabled = false;  //determines if the the undead or alive expansion is enabled or not
+    static boolean OTSEnabled = false; //determines if the Old Time Saloon expansion is enabled or not
+    static int specialDieEnabled = 0; //0 = no special die // 1 = loudMouth enabled // 2 = cowardEnabled
+    
     
     public static void main(String[] args) {
         
         int i;
-        Die[] dice = {new Die(), new Die(), new Die(), new Die(), new Die()};
+        
         Random random = new Random();
         
         
@@ -35,9 +40,16 @@ public class BANG {
         characters.add(new VultureSam());
         characters.add(new Jourdannais());
         characters.add(new BelleStar());
-        characters.add(new GregDigger());
-        characters.add(new ApacheKid());
-        characters.add(new BillNoface()); 
+        if(UoAEnabled == true)
+        {
+            
+            characters.add(new GregDigger());
+        }
+        if(OTSEnabled == true)
+        {
+            characters.add(new ApacheKid());
+            characters.add(new BillNoface()); 
+        }
                 
         
         //ArrayList<Player> players = new ArrayList<Player>();
@@ -89,9 +101,9 @@ public class BANG {
         System.out.println("You are playing as: " + pc.character().name());
         
         displayPlayers();
-        rollAll(dice);
-        printDiceValues(dice);
-        interpretFinalRoll(activePlayer(), dice);
+        rollAll();
+        printDiceValues();
+        interpretFinalRoll(activePlayer());
       
         
         /*
@@ -107,48 +119,133 @@ public class BANG {
         //Player user = new Player();
 
     }
-    public static void beginTurn(Player player, Die[] dice)
+    public static void beginTurn(Player player)
     {
-        if(player.isZombie())
+        if(UoAEnabled == true)
         {
-            pile.drawBoneyardCard();
+            if(player.isDead())
+            {
+                pile.drawBoneyardCard();
+            }
         }
-        rollAll(dice);
+        if(OTSEnabled == true)
+        {
+            replaceDieDecide();
+        }
+        rollAll();
     }
-    public static void reRoll(Player player, Die[] dice)
+    public static void replaceDieDecide()
+    {
+        
+        //replaceDice();
+    }
+    public static void replaceDice(char die)
+    {
+        if(die == 'L')
+        {
+            specialDieEnabled = 1;
+        }
+        else if(die == 'C')
+        {
+             specialDieEnabled = 2;       
+        }
+    }
+    public static void reRoll(Player player)
     {
         //System.out.println("Do you want to re-roll the dice?");
     }
     //interperets rolls between re-rolls
-    public static void interpretRoll(Player player, Die[] dice)
+    public static void interpretRoll(Player player)
     {
-       takeArrows(player, dice);
-       returnArrows(player,dice);
-       bulletCheck(player,dice);
-       dynamiteCheck(player, dice);
+       takeArrows(player);
+       returnArrows(player);
+       bulletCheck(player);
+       dynamiteCheck(player);
     }
     //interperets the final roll of the turn
-    public static void interpretFinalRoll(Player player, Die[] dice)
+    public static void interpretFinalRoll(Player player)
     {
-       takeArrows(player, dice);
-       returnArrows(player,dice);
-       bulletCheck(player,dice);
-       whiskeyCheck(player,dice);
-       shootCheck(player, dice);
-       beerCheck(player, dice);
-       gatlingGunCheck(player,dice);
-       duelCheck(player, dice);
+       /*takeArrows(player);
+       returnArrows(player);
+       bulletCheck(player);*/
+       whiskeyCheck(player);
+       shootCheck(player);
+       beerCheck(player);
+       gatlingGunCheck(player);
+       duelCheck(player);
     }
     //rolls all the dice
-    public static void rollAll(Die[] dice)
+    public static void rollAll()
     {
-        for(Die die: dice)
+        //if undead expansion enabled roll the duel dice, if the OTS expansion is disabled, then specialDieEnabled will always = 0.
+        if(UoAEnabled == true)
         {
-            die.setFaceValue(die.basicRoll());
+            int i = 0;
+            if(specialDieEnabled == 0)
+            { 
+                for(i = 0; i<2 ; i++)
+                {
+                    dice[i].setFaceValue(dice[i].duelRoll());
+                }
+                for(i = 2; i<dice.length; i++)
+                {
+                    dice[i].setFaceValue(dice[i].basicRoll());
+                }
+            }
+            //if OTS and UoA is enabled and the player has selected the special die
+            else
+            {
+                for(i = 0; i<2 ; i++)
+                {
+                    dice[i].setFaceValue(dice[i].duelRoll());
+                }
+                //if the special dice is enabled roll loudmouth for 1 and coward for 2
+                if(specialDieEnabled == 1)
+                {
+                    dice[2].setFaceValue(dice[2].loudmouthRoll());
+                }
+                else if(specialDieEnabled == 2)
+                {
+                    dice[2].setFaceValue(dice[2].cowardRoll());
+                }
+                for(i = 3; i<dice.length; i++)
+                {
+                    dice[i].setFaceValue(dice[i].basicRoll());
+                }
+            }
+        }
+        //UoA is disabled
+        else
+        {
+            //UoA is disabled and either OTS is disabled or the dice is not being used
+            if(specialDieEnabled == 0)
+            {
+                for(Die die: dice)
+                {
+                    die.setFaceValue(die.basicRoll());
+                }
+            }
+            //UoA is disabled but the OTS is enabled and a die is being used
+            else
+            {
+                int i = 0;
+                if(specialDieEnabled == 1)
+                {
+                    dice[0].setFaceValue(dice[0].loudmouthRoll());
+                }
+                else if(specialDieEnabled == 2)
+                {
+                    dice[0].setFaceValue(dice[0].cowardRoll());
+                }
+                for(i = 1; i<dice.length; i++)
+                {
+                    dice[i].setFaceValue(dice[i].basicRoll());
+                }
+            }
         }
     }
     //prints the dice values for debugging
-    public static void printDiceValues(Die[] dice)
+    public static void printDiceValues()
     {
         for(Die die: dice)
         {
@@ -162,7 +259,7 @@ public class BANG {
         }
     }
     //a player(arg1) takes as many arrows that occur on the dice(arg2)
-    public static void takeArrows(Player player, Die[] dice)
+    public static void takeArrows(Player player)
     {
         for(int i = 0; i< dice.length; i++)
         {
@@ -180,7 +277,7 @@ public class BANG {
  
     }
     //a player(arg1) returns as many arrows that occur on the dice(arg2)
-    public static void returnArrows(Player player, Die[] dice)
+    public static void returnArrows(Player player)
     {
         for(int i = 0; i< dice.length; i++)
         {
@@ -196,7 +293,7 @@ public class BANG {
         }
     }
     //a player(arg1) checks to see how many times he takes damage from bullets roled in arg2
-    public static void bulletCheck(Player player, Die[] dice)
+    public static void bulletCheck(Player player)
     {
         for(int i = 0; i< dice.length; i++)
         {
@@ -273,7 +370,7 @@ public class BANG {
         }
     }
     //checks to see how much dynamite player(arg1) rolled with (arg2)
-    public static void dynamiteCheck(Player player, Die[] dice)
+    public static void dynamiteCheck(Player player)
     {
         int count = 0;
         for(Die die : dice)
@@ -288,18 +385,18 @@ public class BANG {
             //if you rolled three dynamite, your turn is over and you take 1 damage
             System.out.println("Dynamite ends your turn and you take 1 damage");
             player.takeDamage(1);
-            endTurn(player, dice);
+            endTurn(player);
         }
     }
     //Handles the end of turn events such as interpeting the final roll and advancing the turn order.
-    public static void endTurn(Player player, Die[] dice)
+    public static void endTurn(Player player)
     {
-        interpretFinalRoll(player, dice);
+        interpretFinalRoll(player);
         turn = (turn +1)%players.size();
         
     }
     //checks the amount of whiskey bottles rolled by a player
-    public static void whiskeyCheck(Player player, Die[] dice)
+    public static void whiskeyCheck(Player player)
     {
         for(Die die: dice)
         {
@@ -315,7 +412,7 @@ public class BANG {
         }
     }
     //checks the amount of Beers rolled by a player
-    public static void beerCheck(Player player, Die[] dice)
+    public static void beerCheck(Player player)
     {
         //if the player has wounds of type 'Beer' then the wound cancels out a single Beer
         int beerWounds = 0;
@@ -351,7 +448,7 @@ public class BANG {
         }
     }
     //check to see how many shots a player rolled
-    public static void shootCheck(Player player, Die[] dice)
+    public static void shootCheck(Player player)
     {
         boolean suzyBonus = true;  //used to check if the player rolled no shots this turn for Suzy Lafayettes special ability
         for(Die die: dice)
@@ -380,7 +477,7 @@ public class BANG {
         }
     }
     //checks to see if three gatling guns have been rolled on a player turn
-    public static void gatlingGunCheck(Player player, Die[] dice)
+    public static void gatlingGunCheck(Player player)
     {
         int count = 0;
         for(Die die: dice)
@@ -402,7 +499,7 @@ public class BANG {
         }
     }
     //check to see how many duels a player rolled on their turn
-    public static void duelCheck(Player player, Die[] dice)
+    public static void duelCheck(Player player)
     {
         for(Die die: dice)
         {
