@@ -6,16 +6,15 @@
 package bang;
 
 import java.util.*;
+import java.lang.Math; 
 
 public class BANG {
     
-   
+    static Pile pile = new Pile();
     static int arrowPile = 9;
     static int turn = 0;
     static Player pc;
     static Player currPlayer;
-    //, new , new , new , new , new , new , new , new };
-    //Player[] players = {new , new ,new , new , new , new , new };
     static ArrayList<Character> characters = new ArrayList<Character>();
     static ArrayList<Player> players = new ArrayList<Player>();
     
@@ -49,6 +48,8 @@ public class BANG {
         players.add(new Player("outlaw"));
         players.add(new Player("deputy"));
         
+       
+        
         Collections.shuffle(characters);
         i = 0;
         for(i = 0 ; i < players.size(); i++)
@@ -60,7 +61,14 @@ public class BANG {
         //Select one of the players to be the user
         pc = players.get(rand);
         
-        
+      
+        //set players maxHP
+        for(Player player : players)
+        {
+            player.setMaxHP(player.character().getHP());
+            player.setCurrentHP(player.maxHP());
+        }
+         
         //shuffle the order of players
         Collections.shuffle(players);
         
@@ -70,18 +78,18 @@ public class BANG {
             if (players.get(i).role() == "sheriff")
             {
                 players.get(i).setSheriff();
+                pc = players.get(i);
                 turn = i;
             }
         }
        
         System.out.println("You are playing as: " + pc.character().name());
+        
+        displayPlayers();
         rollAll(dice);
         printDiceValues(dice);
-        interpretRoll(players.get(turn), dice);
-        displayPlayers();
-        
-   
-        
+        interpretFinalRoll(activePlayer(), dice);
+      
         
         /*
         Scanner scan = new Scanner(System.in);
@@ -103,14 +111,18 @@ public class BANG {
     public static void interpretRoll(Player player, Die[] dice)
     {
        takeArrows(player, dice);
+       returnArrows(player,dice);
        dynamiteCheck(player, dice);
     }
     public static void interpretFinalRoll(Player player, Die[] dice)
     {
        takeArrows(player, dice);
+       returnArrows(player,dice);
+       whiskeyCheck(player,dice);
        shootCheck(player, dice);
        beerCheck(player, dice);
        gatlingGunCheck(player,dice);
+       duelCheck(player, dice);
     }
     public static void rollAll(Die[] dice)
     {
@@ -149,6 +161,21 @@ public class BANG {
         }
  
     }
+    public static void returnArrows(Player player, Die[] dice)
+    {
+        for(int i = 0; i< dice.length; i++)
+        {
+            if(dice[i].getFaceValue() == "Broken Arrow")
+            {
+                if(player.arrows() > 0)
+                {
+                    player.removeArrows(1);
+                    System.out.println(player.character().name+ " returns an arrow");
+                    arrowPile++;
+                }
+            }
+        }
+    }
     public static void indianAttack()
     {
         System.out.println("Indian Attack!");
@@ -159,18 +186,35 @@ public class BANG {
         }
         for(Player player: players)
         {
-            if(player != safePlayer)
+            //if you have the indian chiefs arrows and most arrows
+            if(player == safePlayer)
             {
-            player.takeDamage(player.arrows());
+                
+            }
+            //if you aren't Jourdannias
+            else if(player.character().name() == "Jourdannias")
+            {
+                player.takeDamage(player.arrows());
+            }
+            //if you are Jourdannias
+            else if(player.character().name() == "Jourdannias")
+            {
+                //if your jourdannias and you have at least 1 arrow
+                if(player.arrows() > 0)
+                {
+                    player.takeDamage(1);
+                }
             }
         }
+        //reset the arrowpile
         arrowPile = 9;
     }
     public static void gatlingGun(Player gunner)
     {
         for(Player player: players)
         {
-            if(player != gunner)
+            //if you are the shooter or you are paal regret, take no damage
+            if(player != gunner || player.character().name() != "Pail Regret")
             {
                 player.takeDamage(1);
             }
@@ -208,25 +252,61 @@ public class BANG {
         turn = (turn +1)%players.size();
         
     }
-    public static void beerCheck(Player player, Die[] dice)
+    public static void whiskeyCheck(Player player, Die[] dice)
     {
         for(Die die: dice)
         {
-            if(die.getFaceValue() == "Drink")
+            if(die.getFaceValue() == "Whiskey Bottle")
+            {
+               player.heal(1);
+               if(player.getDuelWounds() != null)
+               {
+                   pile.returnDuelWound(player.returnDuelWound());
+               }
+            }
+        }
+    }
+    public static void beerCheck(Player player, Die[] dice)
+    {
+        int drinkWounds = 0;
+        if(player.getDuelWounds() != null)
+        {
+            for(DuelWound wound : player.getDuelWounds())
+            {
+                if(wound.type() == "drink")
+                {
+                drinkWounds++;
+                }
+            }
+        }
+        
+        for(Die die: dice)
+        {
+            if(die.getFaceValue() == "Drink" && drinkWounds == 0)
             {
                 if(player == pc)
                 {
-                    drinkMenu();
+                    drinkMenu(1);
+                    if(player.character().name() == "Greg Digger")
+                    {
+                        drinkMenu(1);
+                    }
                 }
+            }
+            else
+            {
+                drinkWounds--;
             }
         }
     }
     public static void shootCheck(Player player, Die[] dice)
     {
+        boolean suzyBonus = true;
         for(Die die: dice)
         {
             if(die.getFaceValue() == "ShootFirst")
             {
+                suzyBonus = false;
                 if(player == pc)
                 {
                     shootMenu(1);
@@ -234,11 +314,17 @@ public class BANG {
             }
             else if(die.getFaceValue() == "ShootSecond")
             {
+                suzyBonus = false;
                 if(player == pc)
                 {
                     shootMenu(2);
                 }
             }
+        }
+        //if there were no shoot rolls and the current player is Suzy
+        if(activePlayer().character().name() == "Suzy Lafayette" && suzyBonus)
+        {
+            activePlayer().heal(2);
         }
     }
     public static void gatlingGunCheck(Player player, Die[] dice)
@@ -246,9 +332,13 @@ public class BANG {
         int count = 0;
         for(Die die: dice)
         {
-            if(die.getFaceValue() == "GatlingGun")
+            if(die.getFaceValue() == "Gatling")
             {
                 count++;
+            }
+            else if(die.getFaceValue() == "Double Gatling")
+            {
+                count += 2;
             }
         }
         if(count >= 3)
@@ -256,11 +346,21 @@ public class BANG {
             gatlingGun(player);
         }
     }
+    public static void duelCheck(Player player, Die[] dice)
+    {
+        for(Die die: dice)
+        {
+            if(die.getFaceValue() == "Fight a Duel")
+            {
+                System.out.println("Duel Rolled");
+            }
+        }
+    }
     public static void shootMenu(int shootValue)
     {
         System.out.println("Available targets");
-        System.out.println(players.get(turn+shootValue).character().name());
-        System.out.println(players.get(turn-shootValue).character().name());
+        System.out.println(availableTargetRight(activePlayer(), shootValue).character().name());
+        System.out.println(availableTargetLeft(activePlayer(), shootValue).character().name());
     }
     public static Player mostArrows()
     {
@@ -286,12 +386,76 @@ public class BANG {
         }
         
     }
-    public static void drinkMenu()
+    public static void drinkMenu(int drink)
     {
         System.out.println("Who do you want to heal?");
+        healTarget(activePlayer(), drink);
     }
-    public Player activePlayer()
+    public static Player activePlayer()
     {
         return players.get(turn);
+    }
+    public static void healTarget(Player player,int heal)
+    {
+        //Jesse Jones special Ability
+        if(player == activePlayer() && player.character().name() == "Jesse Jones" && player.currentHP() <= 4)
+        {
+           player.heal(heal*2);
+        }
+        player.heal(heal);
+    }
+    public static void damageTarget(Player player, int damage)
+    {
+        player.takeDamage(damage);
+        if(player.currentHP() == 0)
+        {
+            playerDies(player);
+        }
+    }
+    public static void playerDies(Player deceased){
+        //find and heal vulture sam if he is alive
+        for(Player player: players)
+        {
+            if(player.character().name() == "Vulture Sam" && player.isAlive())
+            {
+                player.heal(2);
+            }
+        }
+        checkWinConditions();
+    }
+    public static Player availableTargetRight(Player player, int distance)
+    {
+        int index = players.indexOf(player);
+        if(players.get((index + distance)%players.size()).isAlive())
+        {
+            return players.get((index+distance)%players.size());
+        }
+        else
+        {
+            return availableTargetRight(nextPlayer(player), 1);
+        }
+    }
+    public static Player availableTargetLeft(Player player, int distance)
+    {
+        int index = players.indexOf(player);
+        if(players.get(Math.floorMod(index - distance,players.size())).isAlive())
+        {
+            return players.get(Math.floorMod(index - distance,players.size()));
+        }
+        else
+        {
+            return availableTargetRight(previousPlayer(player), 1);
+        }
+    }
+    public static void checkWinConditions()
+    {
+    }
+    public static Player nextPlayer(Player player)
+    {
+       return players.get((players.indexOf(player)+1)%players.size());
+    }
+    public static Player previousPlayer(Player player)
+    {
+       return players.get(Math.floorMod((players.indexOf(player))-1,players.size()));
     }
 }
