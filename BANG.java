@@ -14,13 +14,13 @@ public class BANG {
     //static int arrowPile = 9;
     static int turn = 0;
     static Player pc;
-    static Player currPlayer;
     static ArrayList<Character> characters = new ArrayList<Character>();
     static ArrayList<Player> players = new ArrayList<Player>();
     static Die[] dice = {new Die(), new Die(), new Die(), new Die(), new Die()};
     static boolean UoAEnabled = false;  //determines if the the undead or alive expansion is enabled or not
     static boolean OTSEnabled = false; //determines if the Old Time Saloon expansion is enabled or not
     static int specialDieEnabled = 0; //0 = no special die // 1 = loudMouth enabled // 2 = cowardEnabled
+    static int playerDied = 0; //an int that keeps track of how many players died each turn >0 means someone died
     
     
     public static void main(String[] args) {
@@ -32,7 +32,7 @@ public class BANG {
         
         //ArrayList<Character> characters = new ArrayList<Character>();
         
-        //Instantiates are possible characters
+        //Instantiates a list of possible characters
         characters.add(new BlackJack());
         characters.add(new JesseJones());
         characters.add(new PaulRegret());
@@ -54,7 +54,7 @@ public class BANG {
         
         //ArrayList<Player> players = new ArrayList<Player>();
         
-        //instantiates possible roles they are instantiated in the order in which they are added per player amount
+        //instantiates possible roles. They are instantiated in the order in which they are added per player amount
         players.add(new Player("sheriff"));
         players.add(new Player("renegade"));
         players.add(new Player("outlaw"));
@@ -73,8 +73,8 @@ public class BANG {
         }
         
         //Select one of the players to be the user
-        int rand = Math.abs((random.nextInt())%players.size());
-        pc = players.get(rand);
+        //int rand = Math.abs((random.nextInt())%players.size());
+        
         
       
         //set players maxHP
@@ -86,14 +86,14 @@ public class BANG {
          
         //shuffle the order of players
         Collections.shuffle(players);
-        
-        //set the sheriff as the first player and increase his health by 2
+        //assign the pc as the first player
+        pc = players.get(0);
+        //set the sheriff as the first turn and increase his health by 2
         for(i = 0; i< players.size(); i++)
         {
             if (players.get(i).role() == "sheriff")
             {
                 players.get(i).setSheriff();
-                pc = players.get(i);
                 turn = i;
             }
         }
@@ -135,8 +135,7 @@ public class BANG {
         rollAll();
     }
     public static void replaceDieDecide()
-    {
-        
+    {   
         //replaceDice();
     }
     public static void replaceDice(char die)
@@ -301,6 +300,10 @@ public class BANG {
             {
                 player.takeDamage(1);
                 System.out.println(player.character().name+ " takes 1 damage");
+                if(player.isDead())
+                {
+                    playerDies(player);
+                }
             }
         }
     }
@@ -341,6 +344,10 @@ public class BANG {
                     player.takeDamage(1);
                 }
             }
+            if(player.isDead())
+            {
+                playerDies(player);
+            }
         }
         //reset the arrowpile
         pile.setArrows(9);
@@ -353,9 +360,13 @@ public class BANG {
         for(Player player: players)
         {
             //if you are the shooter or you are paul regret, take no damage
-            if(player != gunner || player.character().name() != "Pail Regret")
+            if(player != gunner || player.character().name() != "Paul Regret")
             {
                 player.takeDamage(1);
+            }
+            if(player.isDead())
+            {
+                playerDies(player);
             }
         }
         pile.returnArrow(gunner.arrows());
@@ -385,6 +396,10 @@ public class BANG {
             //if you rolled three dynamite, your turn is over and you take 1 damage
             System.out.println("Dynamite ends your turn and you take 1 damage");
             player.takeDamage(1);
+            if(player.isDead())
+            {
+                playerDies(player);
+            }
             endTurn(player);
         }
     }
@@ -392,6 +407,7 @@ public class BANG {
     public static void endTurn(Player player)
     {
         interpretFinalRoll(player);
+        specialDieEnabled = 0;
         turn = (turn +1)%players.size();
         
     }
@@ -433,10 +449,10 @@ public class BANG {
             {
                 if(player == pc)
                 {
-                    beerMenu(1);
+                    drinkMenu(1);
                     if(player.character().name() == "Greg Digger")
                     {
-                        beerMenu(1);
+                        drinkMenu(1);
                     }
                 }
             }
@@ -549,7 +565,7 @@ public class BANG {
         }
         
     }
-    public static void beerMenu(int beer)
+    public static void drinkMenu(int beer)
     {
         System.out.println("Who do you want to heal?");
         healTarget(activePlayer(), beer);
@@ -573,7 +589,7 @@ public class BANG {
     public static void damageTarget(Player player, int damage)
     {
         player.takeDamage(damage);
-        if(player.currentHP() == 0)
+        if(player.isDead())
         {
             playerDies(player);
         }
@@ -621,6 +637,28 @@ public class BANG {
     //checks to see if a player has won the game
     public static void checkWinConditions()
     {
+        Player sheriff = getSheriff();
+        if(sheriff.isAlive())
+        {
+            if(getLivingPlayers() == getLawPlayers())
+            {
+                lawWin();
+            }
+        }
+        else if(sheriff.isDead())
+        {
+            if(getLivingPlayers().size() == 1)
+            {
+                if(getLivingPlayers().get(0).role() == "Renegade")
+                {
+                    renegadeWin();
+                }
+            }
+            else
+            {
+                outlawWin();
+            }
+        }
     }
     //returns the player to the right of a player
     public static Player nextPlayer(Player player)
@@ -631,5 +669,63 @@ public class BANG {
     public static Player previousPlayer(Player player)
     {
        return players.get(Math.floorMod((players.indexOf(player))-1,players.size()));
+    }
+    public static Player getSheriff()
+    {
+        for(Player player: players)
+        {
+            if(player.role() == "Sheriff")
+            {
+                return player;
+            }
+        }
+    }
+    public static ArrayList<Player> getLivingPlayers()
+    {
+        ArrayList<Player> livingPlayers = new ArrayList<Player>();
+        //if a player is alive add them to the living player array
+        for(Player player: players)
+        {
+            if(player.isAlive())
+            {
+                livingPlayers.add(player);
+            }
+        }
+        return livingPlayers;
+    }
+    public static ArrayList<Player> getLawPlayers()
+    {
+        ArrayList<Player> lawPlayers = new ArrayList<Player>();
+        //if a player is alive add them to the living player array
+        for(Player player: players)
+        {
+            if(player.isAlive() && (player.role() == "Sheriff" || player.role() == "Deputy"))
+            {
+                lawPlayers.add(player);
+            }
+        }
+        return lawPlayers;
+    }
+    public static ArrayList<Player> getOutlawPlayers()
+    {
+        ArrayList<Player> outlawPlayers = new ArrayList<Player>();
+        //if a player is alive add them to the living player array
+        for(Player player: players)
+        {
+            if(player.isAlive() && player.role() == "Outlaw")
+            {
+                outlawPlayers.add(player);
+            }
+        }
+        return outlawPlayers;
+    }
+    public static void lawWin()
+    {
+    }
+    public static void renegadeWin()
+    {
+    }
+    public static void outlawWin()
+    {
     }
 }
